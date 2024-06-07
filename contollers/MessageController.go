@@ -13,11 +13,17 @@ import (
 
 const (
 	uploadURL  = "http://example.com/upload" // URL для отправки данных
-	numWorkers = 5                           // Количество воркеров для чтения файла
+	setupURL   = "URL"
+	numWorkers = 5 // Количество воркеров для чтения файла
 )
 
-func LoadFile(pathForLoadFile string, mod modes.CipherMode) {
+func LoadFile(pathForLoadFile string, mod modes.CipherMode, cryptoAlgorithm, padding, cipherMode, content, format string, countParts int) {
 	numWorkers := 5
+	err := SendSetupMessage(cryptoAlgorithm, padding, cipherMode, content, format, numWorkers)
+	if err != nil {
+		fmt.Println("Error with SendSetupMessage")
+		return
+	}
 	pfr, err := utils.NewParallelFileReader(pathForLoadFile, numWorkers, mod.Encrypt)
 	if err != nil {
 		fmt.Printf("Error creating ParallelFileReader: %v\n", err)
@@ -63,5 +69,35 @@ func SendBlock(block utils.FileBlock, uploadURL string) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("server returned non-200 status: %s", resp.Status)
 	}
+	return nil
+}
+
+func SendSetupMessage(cryptoAlgorithm, padding, cipherMode, content, format string, countParts int) error {
+	message := models.Message{
+		CryptoAlgorithm: cryptoAlgorithm,
+		Padding:         padding,
+		CipherMode:      cipherMode,
+		Content:         content,
+		Format:          format,
+		CountParts:      countParts,
+	}
+
+	// Преобразование структуры Message в JSON
+	jsonData, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal setup message: %w", err)
+	}
+
+	// Отправка данных на сервер
+	resp, err := http.Post(setupURL, "application/json", bytes.NewReader(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to send setup message: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned non-200 status: %s", resp.Status)
+	}
+
 	return nil
 }
