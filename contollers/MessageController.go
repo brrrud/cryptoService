@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
@@ -15,6 +16,31 @@ const (
 	setupURL   = "URL"
 	numWorkers = 5 // Количество воркеров для чтения файла
 )
+
+func LoadFileHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract query parameters
+	pathForLoadFile := r.URL.Query().Get("pathForLoadFile")
+	cryptoAlgorithm := r.URL.Query().Get("cryptoAlgorithm")
+	padding := r.URL.Query().Get("padding")
+	cipherMode := r.URL.Query().Get("cipherMode")
+	content := r.URL.Query().Get("content")
+	format := r.URL.Query().Get("format")
+	countParts := r.URL.Query().Get("countParts")
+	key := r.URL.Query().Get("key")
+
+	// Convert countParts to an integer
+	countPartsInt, err := strconv.Atoi(countParts)
+	if err != nil {
+		http.Error(w, "Invalid countParts parameter", http.StatusBadRequest)
+		return
+	}
+
+	// Call LoadFile with the extracted parameters
+	go LoadFile(pathForLoadFile, cryptoAlgorithm, padding, cipherMode, content, format, countPartsInt, key)
+
+	// Respond to the client
+	fmt.Fprintln(w, "File loading started")
+}
 
 func LoadFile(pathForLoadFile string, cryptoAlgorithm, padding, cipherMode, content, format string, countParts int, key string) {
 	numWorkers := 5
