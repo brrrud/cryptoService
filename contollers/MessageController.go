@@ -6,6 +6,7 @@ import (
 	"cryptoService/models"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"sync"
@@ -25,24 +26,17 @@ func LoadFileHandler(w http.ResponseWriter, r *http.Request) {
 	cipherMode := r.URL.Query().Get("cipherMode")
 	content := r.URL.Query().Get("content")
 	format := r.URL.Query().Get("format")
-	countParts := r.URL.Query().Get("countParts")
+	//countParts := r.URL.Query().Get("countParts")
 	key := r.URL.Query().Get("key")
 
-	// Convert countParts to an integer
-	countPartsInt, err := strconv.Atoi(countParts)
-	if err != nil {
-		http.Error(w, "Invalid countParts parameter", http.StatusBadRequest)
-		return
-	}
-
 	// Call LoadFile with the extracted parameters
-	go LoadFile(pathForLoadFile, cryptoAlgorithm, padding, cipherMode, content, format, countPartsInt, key)
+	go LoadFile(pathForLoadFile, cryptoAlgorithm, padding, cipherMode, content, format, key)
 
 	// Respond to the client
 	fmt.Fprintln(w, "File loading started")
 }
 
-func LoadFile(pathForLoadFile string, cryptoAlgorithm, padding, cipherMode, content, format string, countParts int, key string) {
+func LoadFile(pathForLoadFile string, cryptoAlgorithm, padding, cipherMode, content, format string, key string) {
 	numWorkers := 5
 	err := SendSetupMessage(cryptoAlgorithm, padding, cipherMode, content, format, numWorkers)
 	if err != nil {
@@ -132,4 +126,68 @@ func SendSetupMessage(cryptoAlgorithm, padding, cipherMode, content, format stri
 	}
 
 	return nil
+}
+
+type MessageController struct {
+	mu          sync.Mutex
+	totalChunks int
+	chunks      [][]byte
+	received    int
+}
+
+func NewMessageController(totalChunks int) *MessageController {
+	return &MessageController{
+		totalChunks: totalChunks,
+		chunks:      make([][]byte, totalChunks),
+		received:    0,
+	}
+}
+
+func (mc *MessageController) AddChunk(w http.ResponseWriter, r *http.Request) {
+	chunkIndexStr := r.URL.Query().Get("index")
+	if chunkIndexStr == "" {
+		http.Error(w, "Missing chunk index", http.StatusBadRequest)
+		return
+	}
+
+	chunkIndex, err := strconv.Atoi(chunkIndexStr)
+	if err != nil || chunkIndex < 0 || chunkIndex >= mc.totalChunks {
+		http.Error(w, "Invalid chunk index", http.StatusBadRequest)
+		return
+	}
+
+	chunk, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+
+	if mc.chunks[chunkIndex] == nil {
+		mc.chunks[chunkIndex] = chunk
+		mc.received++
+		fmt.Fprintf(w, "Chunk %d received, total received: %d/%d", chunkIndex, mc.received, mc.totalChunks)
+	} else {
+		http.Error(w, "Chunk already received", http.StatusBadRequest)
+	}
+}
+
+func (mc *MessageController) GetMessage(w http.ResponseWriter, r *http.Request) {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+
+	if mc.received < mc.totalChunks {
+		http.Error(w, "Message not fully received", http.StatusBadRequest)
+		return
+	}
+
+	var fullMessage []byte
+	for _, chunk := range mc.chunks {
+		fullMessage = append(fullMessage, chunk...)
+	}
+
+	w.Write(fullMessage)
 }
