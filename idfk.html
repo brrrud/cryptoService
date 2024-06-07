@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go + JavaScript with WebAssembly</title>
+</head>
+<body>
+<script>
+    // Загружаем Wasm-модуль
+    fetch('output.wasm')
+        .then(response => response.arrayBuffer())
+        .then(bytes => WebAssembly.instantiate(bytes, {})) // Добавляем пустой объект imports
+        .then(results => {
+            // Получаем экспортированные функции из Wasm-модуля
+            const { instance } = results;
+
+            // Вызываем функцию из экспортированного объекта instance.exports
+            const SOSIBIBU = instance.exports.SOSIBIBU;
+
+            // Вызываем функцию и выводим результат
+            console.log('Message:', SOSIBIBU());
+        })
+        .catch(error => {
+            console.error('Error loading WebAssembly module:', error);
+        });
+</script>
+</body>
+</html>
