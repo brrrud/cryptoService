@@ -1,11 +1,10 @@
 package utils
 
 import (
-	"algorithms/cryptography/algorithms"
-	"algorithms/cryptography/modes"
-	"algorithms/cryptography/paddings"
+	"cryptoService/cryptography/algorithms"
+	"cryptoService/cryptography/modes"
+	"cryptoService/cryptography/paddings"
 	"errors"
-	"fmt"
 )
 
 func GetAlgorithmByName(nameAlgorithm string) algorithms.SymmetricEncryption {
@@ -13,7 +12,11 @@ func GetAlgorithmByName(nameAlgorithm string) algorithms.SymmetricEncryption {
 	case "RC6":
 		return &algorithms.Rc6Cipher{}
 	case "Camellia":
-		fmt.Println("Not available")
+		return &algorithms.CamelliaCipher{}
+	case "TwoFish":
+		return &algorithms.Cipher{}
+	case "Serpent":
+		return &algorithms.SerpentCipher{}
 	}
 	return nil
 }
@@ -56,7 +59,7 @@ type CipherModeBuilder struct {
 	encryptionAlgorithm algorithms.SymmetricEncryption
 	mode                modes.CipherMode
 	padding             paddings.Padding
-	key                 string
+	key                 []byte
 }
 
 func NewCipherModeBuilder() *CipherModeBuilder {
@@ -79,8 +82,12 @@ func (b *CipherModeBuilder) SetPadding(padding paddings.Padding) *CipherModeBuil
 }
 
 func (b *CipherModeBuilder) SetKey(key string) *CipherModeBuilder {
-	b.key = key
+	b.key = StringToByteArray(key)
 	return b
+}
+
+func StringToByteArray(s string) []byte {
+	return []byte(s)
 }
 
 func requirePaddings(modeName modes.CipherMode) bool {

@@ -2,7 +2,6 @@ package contollers
 
 import (
 	"bytes"
-	"cryptoService/cryptography/modes"
 	"cryptoService/cryptography/utils"
 	"cryptoService/models"
 	"encoding/json"
@@ -17,14 +16,21 @@ const (
 	numWorkers = 5 // Количество воркеров для чтения файла
 )
 
-func LoadFile(pathForLoadFile string, mod modes.CipherMode, cryptoAlgorithm, padding, cipherMode, content, format string, countParts int) {
+func LoadFile(pathForLoadFile string, cryptoAlgorithm, padding, cipherMode, content, format string, countParts int, key string) {
 	numWorkers := 5
 	err := SendSetupMessage(cryptoAlgorithm, padding, cipherMode, content, format, numWorkers)
 	if err != nil {
 		fmt.Println("Error with SendSetupMessage")
 		return
 	}
-	pfr, err := utils.NewParallelFileReader(pathForLoadFile, numWorkers, mod.Encrypt)
+
+	paddingAlgo := utils.GetPaddingByName(padding)
+	cipherAlgo := utils.GetAlgorithmByName(cryptoAlgorithm)
+	modeAlgo := utils.GetModeByName(cipherMode)
+
+	cryptoSystem, _ := utils.NewCipherModeBuilder().SetMode(modeAlgo).SetPadding(paddingAlgo).SetEncryptionAlgorithm(cipherAlgo).SetKey(key).Build()
+
+	pfr, err := utils.NewParallelFileReader(pathForLoadFile, numWorkers, cryptoSystem.Encrypt)
 	if err != nil {
 		fmt.Printf("Error creating ParallelFileReader: %v\n", err)
 		return
