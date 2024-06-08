@@ -2,14 +2,14 @@ package contollers
 
 import (
 	"cryptoService/cryptography/utils"
-	"cryptoService/models"
+	models2 "cryptoService/rest/models"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
 func EncryptDataHandler(c *gin.Context) {
-	var request models.Message
+	var request models2.Message
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -34,7 +34,7 @@ func EncryptDataHandler(c *gin.Context) {
 }
 
 func DecryptDataHandler(c *gin.Context) {
-	var request models.Message
+	var request models2.Message
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -59,12 +59,12 @@ func DecryptDataHandler(c *gin.Context) {
 }
 
 func EncryptFileFromComputerHandler(c *gin.Context) {
-	var request models.Message
+	var request models2.Message
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var resp models.MessageLikeFile
+	var resp models2.MessageLikeFile
 
 	pad := utils.GetPaddingByName(request.Padding)
 	algo := utils.GetAlgorithmByName(request.CryptoAlgorithm, utils.StringToByteArray(request.Key))
@@ -86,7 +86,7 @@ func EncryptFileFromComputerHandler(c *gin.Context) {
 }
 
 func DecryptFileFromComputerHandler(c *gin.Context) {
-	var request models.MessageLikeFile
+	var request models2.MessageLikeFile
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
