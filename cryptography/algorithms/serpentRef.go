@@ -1,14 +1,12 @@
 package algorithms
 
-// Encrypts one block with the given 132 sub-keys sk.
 func encryptBlock(dst, src []byte, sk *subkeys) {
-	// Transform the input block to 4 x 32 bit registers
+
 	r0 := uint32(src[0]) | uint32(src[1])<<8 | uint32(src[2])<<16 | uint32(src[3])<<24
 	r1 := uint32(src[4]) | uint32(src[5])<<8 | uint32(src[6])<<16 | uint32(src[7])<<24
 	r2 := uint32(src[8]) | uint32(src[9])<<8 | uint32(src[10])<<16 | uint32(src[11])<<24
 	r3 := uint32(src[12]) | uint32(src[13])<<8 | uint32(src[14])<<16 | uint32(src[15])<<24
 
-	// Encrypt the block with the 132 sub-keys and 8 S-Boxes
 	r0, r1, r2, r3 = r0^sk[0], r1^sk[1], r2^sk[2], r3^sk[3]
 	sb0(&r0, &r1, &r2, &r3)
 	linear(&r0, &r1, &r2, &r3)
@@ -108,13 +106,10 @@ func encryptBlock(dst, src []byte, sk *subkeys) {
 	r0, r1, r2, r3 = r0^sk[124], r1^sk[125], r2^sk[126], r3^sk[127]
 	sb7(&r0, &r1, &r2, &r3)
 
-	// whitening
 	r0 ^= sk[128]
 	r1 ^= sk[129]
 	r2 ^= sk[130]
 	r3 ^= sk[131]
-
-	// write the encrypted block to the output
 
 	dst[0] = byte(r0)
 	dst[1] = byte(r0 >> 8)
@@ -134,21 +129,17 @@ func encryptBlock(dst, src []byte, sk *subkeys) {
 	dst[15] = byte(r3 >> 24)
 }
 
-// Decrypts one block with the given 132 sub-keys sk.
 func decryptBlock(dst, src []byte, sk *subkeys) {
-	// Transform the input block to 4 x 32 bit registers
 	r0 := uint32(src[0]) | uint32(src[1])<<8 | uint32(src[2])<<16 | uint32(src[3])<<24
 	r1 := uint32(src[4]) | uint32(src[5])<<8 | uint32(src[6])<<16 | uint32(src[7])<<24
 	r2 := uint32(src[8]) | uint32(src[9])<<8 | uint32(src[10])<<16 | uint32(src[11])<<24
 	r3 := uint32(src[12]) | uint32(src[13])<<8 | uint32(src[14])<<16 | uint32(src[15])<<24
 
-	// undo whitening
 	r0 ^= sk[128]
 	r1 ^= sk[129]
 	r2 ^= sk[130]
 	r3 ^= sk[131]
 
-	// Decrypt the block with the 132 sub-keys and 8 S-Boxes
 	sb7Inv(&r0, &r1, &r2, &r3)
 	r0, r1, r2, r3 = r0^sk[124], r1^sk[125], r2^sk[126], r3^sk[127]
 	linearInv(&r0, &r1, &r2, &r3)
@@ -252,7 +243,6 @@ func decryptBlock(dst, src []byte, sk *subkeys) {
 	r2 ^= sk[2]
 	r3 ^= sk[3]
 
-	// write the decrypted block to the output
 	dst[0] = byte(r0)
 	dst[1] = byte(r0 >> 8)
 	dst[2] = byte(r0 >> 16)

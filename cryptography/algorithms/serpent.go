@@ -4,7 +4,6 @@ import (
 	"errors"
 )
 
-// BlockSize is the serpent block size in bytes.
 const BlockSize = 16
 
 const phi = 0x9e3779b9 // The Serpent phi constant (sqrt(5) - 1) * 2**31
@@ -33,7 +32,6 @@ type subkeys [132]uint32
 
 func (s *SerpentCipher) GetBlockSize() int { return BlockSize }
 
-// Encrypt шифрует данные и возвращает зашифрованный текст
 func (s *SerpentCipher) Encrypt(plaintext []byte) ([]byte, error) {
 	if len(plaintext) < BlockSize {
 		return nil, errors.New("plaintext buffer too small")
@@ -43,7 +41,6 @@ func (s *SerpentCipher) Encrypt(plaintext []byte) ([]byte, error) {
 	return dst, nil
 }
 
-// Decrypt расшифровывает данные и возвращает исходный текст
 func (s *SerpentCipher) Decrypt(ciphertext []byte) ([]byte, error) {
 	if len(ciphertext) < BlockSize {
 		return nil, errors.New("ciphertext buffer too small")

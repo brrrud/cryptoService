@@ -9,10 +9,6 @@ const BlockSizeCamellia = 16
 
 type KeySizeErrorCamellia int
 
-//func (k KeySizeError) Error() string {
-//	return "camellia: invalid key size " + strconv.Itoa(int(k))
-//}
-
 type CamelliaCipher struct {
 	kw   [5]uint64
 	k    [25]uint64

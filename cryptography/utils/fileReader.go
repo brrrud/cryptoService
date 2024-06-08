@@ -131,3 +131,35 @@ func (pfr *ParallelFileReader) Close() {
 //func (pfr *ParallelFileReader) BuildFileByChunks(resultChan chan, ) {
 //
 //}
+
+func ReadFileToBytes(filePath string) ([]byte, error) {
+	const maxSize int64 = 2 * 1024 * 1024 // 2 MB
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	if fileInfo.Size() > maxSize {
+		return nil, fmt.Errorf("file incorrect size , %d", fileInfo.Size())
+	}
+
+	byteArray := make([]byte, fileInfo.Size())
+
+	_, err = io.ReadFull(file, byteArray)
+	if err != nil {
+		return nil, err
+	}
+
+	return byteArray, nil
+}
+
+func GetFileExtension(filePath string) string {
+	return filepath.Ext(filePath)
+}

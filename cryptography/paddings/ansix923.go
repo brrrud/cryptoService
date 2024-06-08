@@ -15,17 +15,16 @@ func (ap ANSIX923Padding) Pad(data []byte, blockSize int) ([]byte, error) {
 	paddedData := append(data, padding...)
 	return paddedData, nil
 }
-
 func (ap ANSIX923Padding) Unpad(data []byte, blockSize int) ([]byte, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("invalid padding size")
 	}
 	paddingSize := int(data[len(data)-1])
-	if paddingSize > len(data) || paddingSize > blockSize {
+	if paddingSize <= 0 || paddingSize > len(data) || paddingSize > blockSize {
 		return nil, fmt.Errorf("invalid padding size")
 	}
 	for i := 0; i < paddingSize-1; i++ {
-		if data[len(data)-1-i] != 0 {
+		if data[len(data)-2-i] != 0 { // ИСПРАВЛЕНО: data[len(data)-1-i] -> data[len(data)-2-i]
 			return nil, fmt.Errorf("invalid padding")
 		}
 	}

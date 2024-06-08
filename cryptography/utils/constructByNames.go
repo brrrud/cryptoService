@@ -7,37 +7,21 @@ import (
 	"errors"
 )
 
-func GetAlgorithmByName(nameAlgorithm string) algorithms.SymmetricEncryption {
+func GetAlgorithmByName(nameAlgorithm string, key []byte) algorithms.SymmetricEncryption {
 	switch nameAlgorithm {
 	case "RC6":
-		return &algorithms.Rc6Cipher{}
+		return algorithms.NewCipher(key)
 	case "Camellia":
-		return &algorithms.CamelliaCipher{}
+		ans, _ := algorithms.NewCamellia(key)
+		return ans
 	case "TwoFish":
-		return &algorithms.Cipher{}
+		ans, _ := algorithms.NewTwoFishCipher(key)
+		return ans
 	case "Serpent":
-		return &algorithms.SerpentCipher{}
+		ans, _ := algorithms.NewSerpentCipher(key)
+		return ans
 	}
 	return nil
-}
-
-func GetModeByName(nameMode string) modes.CipherMode {
-	switch nameMode {
-	case "CBC":
-		return &modes.CBCMode{}
-	case "CFB":
-		return &modes.CFBMode{}
-	case "CTR":
-		return &modes.CTRMode{}
-	case "ECB":
-		return &modes.ECB{}
-	case "OFB":
-		return &modes.OFBMode{}
-	case "PCBC":
-		return &modes.PCBC{}
-	default:
-		return nil
-	}
 }
 
 func GetPaddingByName(namePadding string) paddings.Padding {
@@ -55,59 +39,53 @@ func GetPaddingByName(namePadding string) paddings.Padding {
 	}
 }
 
-type CipherModeBuilder struct {
-	encryptionAlgorithm algorithms.SymmetricEncryption
-	mode                modes.CipherMode
-	padding             paddings.Padding
-	key                 []byte
-}
-
-func NewCipherModeBuilder() *CipherModeBuilder {
-	return &CipherModeBuilder{}
-}
-
-func (b *CipherModeBuilder) SetEncryptionAlgorithm(algorithm algorithms.SymmetricEncryption) *CipherModeBuilder {
-	b.encryptionAlgorithm = algorithm
-	return b
-}
-
-func (b *CipherModeBuilder) SetMode(mode modes.CipherMode) *CipherModeBuilder {
-	b.mode = mode
-	return b
-}
-
-func (b *CipherModeBuilder) SetPadding(padding paddings.Padding) *CipherModeBuilder {
-	b.padding = padding
-	return b
-}
-
-func (b *CipherModeBuilder) SetKey(key string) *CipherModeBuilder {
-	b.key = StringToByteArray(key)
-	return b
+func GetModeByName(nameMode string, pad paddings.Padding, algo algorithms.SymmetricEncryption) (modes.CipherMode, error) {
+	switch nameMode {
+	case "CBC":
+		mode, err := modes.NewCBC(algo, pad)
+		if err != nil {
+			return nil, err
+		}
+		return mode, nil
+	case "CFB":
+		mode, err := modes.NewCFBMode(algo, pad)
+		if err != nil {
+			return nil, err
+		}
+		return mode, nil
+	case "CTR":
+		mode, err := modes.NewCTRMode(algo)
+		if err != nil {
+			return nil, err
+		}
+		return mode, nil
+	case "ECB":
+		mode, err := modes.NewECB(algo, pad)
+		if err != nil {
+			return nil, err
+		}
+		return mode, nil
+	case "OFB":
+		mode, err := modes.NewOFBMode(algo)
+		if err != nil {
+			return nil, err
+		}
+		return mode, nil
+	case "PCBC":
+		mode, err := modes.NewPCBC(algo, pad)
+		if err != nil {
+			return nil, err
+		}
+		return mode, nil
+	default:
+		return nil, errors.New("unsupported mode")
+	}
 }
 
 func StringToByteArray(s string) []byte {
 	return []byte(s)
 }
 
-func requirePaddings(modeName modes.CipherMode) bool {
-	switch modeName {
-	case &modes.CBCMode{}, &modes.CFBMode{}, &modes.ECB{}, &modes.PCBC{}:
-		return true
-	default:
-		return false
-	}
-}
-
-func (b *CipherModeBuilder) Build() (modes.CipherMode, error) {
-	if b.encryptionAlgorithm == nil {
-		return nil, errors.New("encryption algorithm is not set")
-	}
-	if b.mode == nil {
-		return nil, errors.New("mode is not set")
-	}
-	if requirePaddings(b.mode) && b.padding == nil {
-		return nil, errors.New("padding is required but not set")
-	}
-	return b.mode, nil
+func BytesToString(byteArray []byte) string {
+	return string(byteArray)
 }

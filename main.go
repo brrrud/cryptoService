@@ -2,18 +2,21 @@ package main
 
 import (
 	"cryptoService/contollers"
-	"net/http"
+	"fmt"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	//key := []byte("examplekey123456")
-	//serpent, _ := algorithms.NewCamellia(key)
-	//zp := paddings.ZerosPadding{}
-	//mod, _ := modes.NewECB(serpent, zp)
-	//enc, _ := mod.Encrypt([]byte("ABOBA"))
-	//dec, _ := mod.Decrypt(enc)
-	//fmt.Printf("Decrypted: %s\n", dec)
+	router := gin.Default()
 
-	http.HandleFunc("/loadfile", contollers.LoadFileHandler)
-	http.ListenAndServe(":8090/upload", nil)
+	router.POST("/encryptMsg", contollers.EncryptDataHandler)
+	router.POST("/decryptMsg", contollers.DecryptDataHandler)
+	router.POST("/encryptFile", contollers.EncryptFileFromComputerHandler)
+	router.POST("/decryptFile", contollers.DecryptFileFromComputerHandler)
+
+	err := router.Run(":8090")
+	if err != nil {
+		_ = fmt.Errorf("error with start GO seervice %s", err)
+		return
+	}
 }
